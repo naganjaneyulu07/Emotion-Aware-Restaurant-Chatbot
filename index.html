@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>🍽️ Restaurant Chatbot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+  :root{
+    --bg:#f5f3ff;
+    --bg-gradient:linear-gradient(135deg,#fdfbfb 0%,#f3e7ff 40%,#ffe9dd 100%);
+    --card:#ffffff;
+    --panel:#fbfafc;
+    --accent:#ff784f;
+    --accent-soft:#ffe1d6;
+    --accent-dark:#e76741;
+    --text:#222222;
+    --subtle:#7c7c8a;
+    --pill-user:#eef4ff;
+    --pill-bot:#ffece4;
+    --border-soft:#e5e0f0;
+    --bar-low:#21a35d;
+    --bar-mid:#f2a33b;
+    --bar-high:#e04646;
+    --maxw:860px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  body{
+    min-height:100vh;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg-gradient);
+    color:var(--text);
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+  }
+
+  /* Outer shell to center content */
+  .shell{
+    width:100%;
+    max-width:var(--maxw);
+    padding:18px 14px 96px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Chat card */
+  .card{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    background:var(--card);
+    border-radius:24px;
+    box-shadow:
+      0 20px 45px rgba(15,23,42,.12),
+      0 0 0 1px rgba(148,163,184,.22);
+    overflow:hidden;
+  }
+
+  /* Header */
+  .header{
+    padding:14px 20px 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid var(--border-soft);
+    background:radial-gradient(circle at top left,#ffe3ce 0%,#fff 50%);
+  }
+
+  .header-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .logo-circle{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,120,79,.14);
+    border:1px solid rgba(255,120,79,.3);
+    font-size:18px;
+  }
+  .header-title{
+    font-weight:600;
+    letter-spacing:.02em;
+    font-size:16px;
+  }
+  .header-sub{
+    font-size:12px;
+    color:var(--subtle);
+    margin-top:1px;
+  }
+  .status-pill{
+    padding:6px 10px;
+    border-radius:999px;
+    background:rgba(34,197,94,.08);
+    border:1px solid rgba(34,197,94,.25);
+    font-size:11px;
+    color:#166534;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .status-dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#22c55e;
+  }
+
+  /* Chat box */
+  #chat-box{
+    width:100%;
+    flex:1;
+    overflow-y:auto;
+    background:var(--panel);
+    padding:16px 18px 20px;
+  }
+
+  /* Bubbles: user LEFT, bot RIGHT */
+  .msg-row{
+    display:flex;
+    margin:8px 4px;
+  }
+  .row-user{justify-content:flex-start;}
+  .row-bot{justify-content:flex-end;}
+
+  .msg{
+    display:inline-block;
+    max-width:78%;
+    padding:10px 14px;
+    border-radius:18px;
+    line-height:1.35;
+    font-size:14px;
+    word-wrap:break-word;
+    box-shadow:0 1px 0 rgba(0,0,0,.03);
+    position:relative;
+  }
+
+  .bubble-user{
+    background:var(--pill-user);
+    border:1px solid #dde6ff;
+  }
+  .bubble-bot{
+    background:var(--pill-bot);
+    border:1px solid #ffd7c3;
+  }
+
+  /* Subtle message timestamp style (optional, can be added later) */
+  .muted{color:var(--subtle);font-size:11px;}
+
+  /* Input bar (floating, width-limited) */
+  .input-bar{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    padding:12px 14px 18px;
+    pointer-events:none;
+  }
+  .input-bar .inner{
+    max-width:var(--maxw);
+    margin:0 auto;
+    pointer-events:auto;
+  }
+
+  .input-inner{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:rgba(17,24,39,.82);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-radius:999px;
+    padding:8px 10px;
+    box-shadow:0 18px 40px rgba(15,23,42,.45);
+    border:1px solid rgba(148,163,184,.7);
+  }
+
+  .voice-lang-box{
+    display:flex;
+    flex-direction:column;
+    font-size:11px;
+    color:#e5e7eb;
+    min-width:90px;
+    padding-left:4px;
+  }
+  .voice-label{
+    margin-bottom:3px;
+    opacity:.85;
+  }
+  .lang-select{
+    padding:6px 8px;
+    border-radius:999px;
+    border:1px solid rgba(148,163,184,.9);
+    outline:none;
+    background:rgba(15,23,42,1);
+    color:#e5e7eb;
+    font-size:12px;
+  }
+
+  .chat-input{
+    flex:1;
+    padding:9px 12px;
+    border:0;
+    outline:none;
+    border-radius:999px;
+    background:#0f172a;
+    color:#f9fafb;
+    font-size:14px;
+    min-width:0;
+  }
+  .chat-input::placeholder{
+    color:#9ca3af;
+  }
+
+  .icon-btn{
+    width:40px;
+    height:40px;
+    border:0;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#0f172a;
+    cursor:pointer;
+    font-size:20px;
+    color:#f9fafb;
+    transition:transform .08s ease, box-shadow .08s ease, background .12s ease;
+    box-shadow:0 0 0 1px rgba(148,163,184,.6);
+    flex-shrink:0;
+  }
+  .icon-btn:hover{
+    transform:translateY(-1px);
+    box-shadow:0 8px 16px rgba(15,23,42,.6);
+  }
+  .icon-btn:active{
+    transform:scale(.96);
+    box-shadow:none;
+  }
+
+  .send-btn{
+    background:var(--accent);
+    box-shadow:0 8px 18px rgba(248,113,113,.7);
+    font-size:18px;
+  }
+  .send-btn:hover{
+    background:var(--accent-dark);
+  }
+
+  .mic-btn.recording{
+    background:#dc2626;
+    box-shadow:0 8px 18px rgba(220,38,38,.7);
+    transform:scale(1.05);
+  }
+
+  .trash-btn{
+    width:32px;
+    height:32px;
+    border:1px solid #e5e7eb;
+    border-radius:50%;
+    background:#f9fafb;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+
+  /* Recording inline UI */
+  .recording-wrap{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex:1;
+    background:#0f172a;
+    border-radius:999px;
+    padding:5px 10px;
+    color:#f9fafb;
+  }
+
+  .rec-dot{
+    color:#f97373;
+    font-size:11px;
+    animation:pulse 1s infinite;
+  }
+  @keyframes pulse{50%{opacity:.4}}
+
+  .rec-text{
+    flex:1;
+    min-width:0;
+    font-size:13px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    opacity:.9;
+  }
+
+  .wave{
+    display:flex;
+    align-items:flex-end;
+    gap:3px;
+    height:22px;
+    padding:0 2px;
+  }
+  .wave-bar{
+    width:4px;
+    height:6px;
+    border-radius:999px;
+    background:var(--bar-low);
+    transition:height 110ms ease, background-color 110ms ease;
+  }
+
+  .hidden{display:none}
+
+  /* Small-screen tweaks */
+  @media (max-width:600px){
+    .card{border-radius:18px;}
+    #chat-box{padding:14px 12px 16px;}
+    .input-inner{padding:7px 8px;}
+    .chat-input{font-size:13px;}
+    .voice-lang-box{display:none;} /* hide language pill on very small screens */
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="card">
+      <div class="header">
+        <div class="header-left">
+          <div class="logo-circle">🍽️</div>
+          <div>
+            <div class="header-title">Restaurant Chatbot</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat-box" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- Floating input bar -->
+  <div class="input-bar">
+    <div class="inner">
+      <div class="input-inner" id="inputRow">
+        <div class="voice-lang-box">
+          <label class="voice-label">🎙️ Voice</label>
+          <select id="languageSelector" class="lang-select">
+            <option value="en-IN" selected>English</option>
+            <option value="hi-IN">Hindi</option>
+            <option value="te-IN">Telugu</option>
+          </select>
+        </div>
+
+        <!-- Normal text field -->
+        <input
+          id="user-input"
+          class="chat-input"
+          placeholder="Ask about the menu or order..."
+          autocomplete="off"
+        />
+
+        <!-- Recording inline (hidden until active) -->
+        <div id="recordingInline" class="recording-wrap hidden">
+          <span class="rec-dot">●</span>
+
+          <!-- DELETE just LEFT of timer (per your requirement) -->
+          <button id="deleteButton" class="trash-btn" title="Delete current recording">🗑</button>
+
+          <span id="rec-timer" class="muted">0:00</span>
+
+          <div class="wave" aria-hidden="true">
+            <div class="wave-bar" id="bar1"></div>
+            <div class="wave-bar" id="bar2"></div>
+            <div class="wave-bar" id="bar3"></div>
+            <div class="wave-bar" id="bar4"></div>
+            <div class="wave-bar" id="bar5"></div>
+          </div>
+
+          <span id="rec-text" class="rec-text"></span>
+        </div>
+
+        <!-- Always visible controls -->
+        <button id="micButton" class="icon-btn mic-btn" title="Tap to start / stop">🎤</button>
+        <button id="sendButton" class="icon-btn send-btn" title="Send">➤</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ========= Chat bubbles (user LEFT, bot RIGHT) ========= */
+const chatBox = document.getElementById("chat-box");
+function scrollToBottom(){ chatBox.scrollTop = chatBox.scrollHeight; }
+
+function addMessage(text, who){
+  const row = document.createElement("div");
+  row.className = who === "bot" ? "msg-row row-bot" : "msg-row row-user";
+
+  const bubble = document.createElement("div");
+  bubble.className = "msg " + (who === "bot" ? "bubble-bot" : "bubble-user");
+  bubble.textContent = text;
+
+  row.appendChild(bubble);
+  chatBox.appendChild(row);
+  scrollToBottom();
+}
+
+/* ========= Send (text) ========= */
+const sendBtn = document.getElementById("sendButton");
+const input = document.getElementById("user-input");
+
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keydown", (e)=>{ if(e.key === "Enter") sendMessage(); });
+
+function sendMessage(){
+  const msg = input.value.trim();
+  if(!msg) return;
+  addMessage(msg, "user");
+
+  fetch("/chat", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ user_id:"userX", message: msg })
+  })
+  .then(r=>r.json())
+  .then(data=> addMessage(data?.response ?? "…", "bot"))
+  .catch(()=> addMessage("Sorry, I couldn't reach the server.", "bot"));
+
+  input.value = "";
+}
+
+/* ========= Speech recognition with resilient recording ========= */
+let recognition;
+let audioContext, analyser, micSource, mediaStream;
+let seconds=0, recTimer;
+let recordingActive = false;
+
+const micBtn = document.getElementById("micButton");
+const delBtn = document.getElementById("deleteButton");
+const recWrap = document.getElementById("recordingInline");
+const recTimerEl = document.getElementById("rec-timer");
+const recTextEl = document.getElementById("rec-text");
+const langSel = document.getElementById("languageSelector");
+const bars = ["bar1","bar2","bar3","bar4","bar5"].map(id=>document.getElementById(id));
+
+const hasSpeech = "webkitSpeechRecognition" in window;
+
+if(hasSpeech){
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = "en-IN";
+  recognition.interimResults = true;
+  recognition.continuous = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = async () => {
+    recordingActive = true;
+    micBtn.classList.add("recording");
+    recWrap.classList.remove("hidden");
+    input.classList.add("hidden");
+    startTimer();
+
+    try{
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      startAmplitude(mediaStream);
+    }catch(e){
+      stopAllRecordingUI();
+      alert("Microphone permission is required.");
+    }
+  };
+
+  recognition.onresult = (evt) => {
+    let final = "";
+    let interim = "";
+    for(let i=evt.resultIndex; i<evt.results.length; i++){
+      const t = evt.results[i][0].transcript;
+      if(evt.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    const combined = (final + " " + interim).trim();
+    input.value = combined;
+    recTextEl.textContent = combined || "Listening…";
+  };
+
+  recognition.onerror = () => {
+    if(recordingActive){ safeRestart(); }
+    else { stopAllRecordingUI(); }
+  };
+
+  recognition.onend = () => {
+    if(recordingActive){ safeRestart(); }
+    else { stopAllRecordingUI(); }
+  };
+}
+
+function safeRestart(){
+  setTimeout(()=>{ try{ recognition.start(); }catch{} },150);
+}
+
+langSel.onchange = (e)=>{ if(recognition) recognition.lang = e.target.value; };
+
+micBtn.addEventListener("click", ()=>{
+  if(!hasSpeech){ alert("Speech recognition not supported."); return; }
+  if(micBtn.classList.contains("recording")){
+    recordingActive = false;
+    try{ recognition.stop(); }catch{}
+    stopAllRecordingUI();
+  }else{
+    try{ recognition.start(); }catch{}
+  }
+});
+
+delBtn.addEventListener("click", ()=>{
+  input.value = "";
+  recTextEl.textContent = "";
+  recordingActive = true;
+  try{ recognition.stop(); }catch{}
+});
+
+function startTimer(){
+  seconds = 0;
+  recTimerEl.textContent = "0:00";
+  clearInterval(recTimer);
+  recTimer = setInterval(()=>{
+    seconds++;
+    const m = Math.floor(seconds/60);
+    const s = (seconds%60).toString().padStart(2,"0");
+    recTimerEl.textContent = `${m}:${s}`;
+  },1000);
+}
+function stopTimer(){ clearInterval(recTimer); }
+
+function startAmplitude(stream){
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize = 256;
+  micSource = audioContext.createMediaStreamSource(stream);
+  micSource.connect(analyser);
+  animateBars();
+}
+function animateBars(){
+  if(!analyser) return;
+  const arr = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(arr);
+  const avg = arr.reduce((a,b)=>a+b,0)/arr.length;
+  const level = Math.min(40, Math.max(6, avg/3));
+  const mult = [0.6,0.9,1.0,0.85,0.7];
+  bars.forEach((el,i)=>{
+    const h = Math.max(6, Math.min(40, level*mult[i]));
+    el.style.height = h + "px";
+    el.style.backgroundColor =
+      h < 16 ? "var(--bar-low)" :
+      h < 28 ? "var(--bar-mid)" : "var(--bar-high)";
+  });
+  requestAnimationFrame(animateBars);
+}
+
+function resetBars(){
+  bars.forEach(el=>{
+    el.style.height = "6px";
+    el.style.backgroundColor = "var(--bar-low)";
+  });
+}
+
+function stopAllRecordingUI(){
+  stopTimer();
+  micBtn.classList.remove("recording");
+  recWrap.classList.add("hidden");
+  input.classList.remove("hidden");
+  resetBars();
+  recTextEl.textContent = "";
+  if(audioContext){ try{ audioContext.close(); }catch{} audioContext = null; }
+  if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream = null; }
+  analyser = null; micSource = null;
+}
+
+/* Auto scroll on growth */
+const ro = new ResizeObserver(()=>scrollToBottom());
+ro.observe(chatBox);
+
+/* Initial greet */
+addMessage("Hello! How can I help you today?", "bot");
+</script>
+</body>
+</html>
